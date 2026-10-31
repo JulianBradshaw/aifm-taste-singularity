@@ -6,6 +6,7 @@ Contains the AutomationModel class for computing automation fractions
 and optimal CES frontier calculations.
 """
 
+from .lamsite import lam as _lam
 import numpy as np
 import time
 from typing import Optional, Dict, Any, Tuple, NamedTuple, TYPE_CHECKING
@@ -754,7 +755,7 @@ def aut_frac_from_swe_multiplier(swe_multiplier: float, L_HUMAN: float, inferenc
         return 0.0
 
     # Target value we want to achieve
-    target_output = swe_multiplier**params.parallel_penalty * compute_coding_labor_deprecated(0, inference_H100e, L_HUMAN, params.rho_coding_labor, params.parallel_penalty, params.coding_labor_normalization, human_only=True)
+    target_output = swe_multiplier**_lam('anchor', params.parallel_penalty) * compute_coding_labor_deprecated(0, inference_H100e, L_HUMAN, params.rho_coding_labor, _lam('anchor', params.parallel_penalty), params.coding_labor_normalization, human_only=True)
 
     # Define the objective function to minimize
     def objective(A_candidate):
@@ -762,7 +763,7 @@ def aut_frac_from_swe_multiplier(swe_multiplier: float, L_HUMAN: float, inferenc
         try:
             actual_output = compute_coding_labor_deprecated(
                 A_candidate, inference_H100e, L_HUMAN,
-                params.rho_coding_labor, params.parallel_penalty, params.coding_labor_normalization
+                params.rho_coding_labor, _lam('anchor', params.parallel_penalty), params.coding_labor_normalization
             )
             return actual_output - target_output
         except Exception as e:
@@ -813,7 +814,7 @@ def aut_frac_from_swe_multiplier(swe_multiplier: float, L_HUMAN: float, inferenc
             try:
                 actual_outputs = compute_coding_labor_deprecated(
                     A_candidates, inference_H100e, L_HUMAN,
-                    params.rho_coding_labor, params.parallel_penalty, params.coding_labor_normalization
+                    params.rho_coding_labor, _lam('anchor', params.parallel_penalty), params.coding_labor_normalization
                 )
                 errors = np.abs(actual_outputs - target_output)
             except Exception as vec_e:
@@ -886,12 +887,12 @@ def solve_lower_anchor_via_automation_model(
             return aut_frac_from_swe_multiplier(swe_multiplier, L_HUMAN, inference_H100e, params)
 
         # Target coding-labor ratio in parallel_penalty space
-        target_ratio = float(np.power(swe_multiplier, params.parallel_penalty))
+        target_ratio = float(np.power(swe_multiplier, _lam('anchor', params.parallel_penalty)))
 
         # Baseline human-only coding labor (consistent with definition of multiplier)
         baseline = compute_coding_labor_deprecated(
             0, inference_H100e, L_HUMAN,
-            params.rho_coding_labor, params.parallel_penalty, params.coding_labor_normalization,
+            params.rho_coding_labor, _lam('anchor', params.parallel_penalty), params.coding_labor_normalization,
             human_only=True
         )
         if baseline <= 0 or not np.isfinite(baseline):
@@ -934,11 +935,11 @@ def solve_lower_anchor_via_automation_model(
                     A = am.get_automation_fraction(anchor_progress)
                     L_ai = compute_coding_labor_deprecated(
                         A, inference_H100e, L_HUMAN,
-                        params.rho_coding_labor, params.parallel_penalty, params.coding_labor_normalization
+                        params.rho_coding_labor, _lam('anchor', params.parallel_penalty), params.coding_labor_normalization
                     )
                 else:
                     # Match units with compute_coding_labor_deprecated
-                    L_ai = float((L_opt ** params.parallel_penalty) * params.coding_labor_normalization)
+                    L_ai = float((L_opt ** _lam('anchor', params.parallel_penalty)) * params.coding_labor_normalization)
                 if not np.isfinite(L_ai) or L_ai <= 0:
                     _prof_implied_ratio_time += time.perf_counter() - _prof_call_start
                     return 0.0
@@ -1088,7 +1089,7 @@ def serial_uplift_for_logistic(
     if baseline is None:
         baseline = float(compute_coding_labor_deprecated(
             0, C, H,
-            params.rho_coding_labor, params.parallel_penalty, params.coding_labor_normalization,
+            params.rho_coding_labor, _lam('anchor', params.parallel_penalty), params.coding_labor_normalization,
             human_only=True
         ))
     if not (np.isfinite(baseline) and baseline > 0):
@@ -1122,7 +1123,7 @@ def serial_uplift_for_schedule(
     if baseline is None:
         baseline = float(compute_coding_labor_deprecated(
             0, C, H,
-            params.rho_coding_labor, params.parallel_penalty, params.coding_labor_normalization,
+            params.rho_coding_labor, _lam('anchor', params.parallel_penalty), params.coding_labor_normalization,
             human_only=True
         ))
     if not (np.isfinite(baseline) and baseline > 0):
@@ -1141,7 +1142,7 @@ def serial_uplift_for_schedule(
         usable = np.isfinite(L_opt)
         L_ai = np.empty(progress_arr.shape, dtype=float)
         L_ai[usable] = (
-            np.power(L_opt[usable], params.parallel_penalty) * params.coding_labor_normalization
+            np.power(L_opt[usable], _lam('anchor', params.parallel_penalty)) * params.coding_labor_normalization
         )
 
     if not np.all(usable):
@@ -1149,7 +1150,7 @@ def serial_uplift_for_schedule(
         A_fallback = np.atleast_1d(am.get_automation_fraction(progress_arr[~usable]))
         L_ai[~usable] = np.atleast_1d(compute_coding_labor_deprecated(
             A_fallback, C, H,
-            params.rho_coding_labor, params.parallel_penalty, params.coding_labor_normalization
+            params.rho_coding_labor, _lam('anchor', params.parallel_penalty), params.coding_labor_normalization
         ))
 
     return L_ai / baseline
@@ -1174,7 +1175,7 @@ def _seed_logistic_from_uplift(
         k      = A'(p*) / (A* (1 - A*/L))      (logistic slope identity)
         x0     = p* + ln(L/A* - 1) / k
     """
-    parallel_penalty = float(params.parallel_penalty)
+    parallel_penalty = float(_lam('anchor', params.parallel_penalty))
     swe_multiplier_guess = float(target_serial_uplift) ** (1.0 / parallel_penalty)
     A_star = float(aut_frac_from_swe_multiplier(swe_multiplier_guess, H, C, params))
     A_star = float(np.clip(
@@ -1186,7 +1187,7 @@ def _seed_logistic_from_uplift(
     def simple_multiplier(A):
         return float(compute_coding_labor_deprecated(
             A, C, H,
-            params.rho_coding_labor, parallel_penalty, params.coding_labor_normalization
+            params.rho_coding_labor, _lam('anchor', parallel_penalty), params.coding_labor_normalization
         )) / baseline
 
     h = min(1e-5, 0.5 * A_star, 0.5 * (1.0 - A_star))
@@ -1404,7 +1405,7 @@ def solve_logistic_from_uplift(
 
     baseline = float(compute_coding_labor_deprecated(
         0, C, H,
-        params.rho_coding_labor, params.parallel_penalty, params.coding_labor_normalization,
+        params.rho_coding_labor, _lam('anchor', params.parallel_penalty), params.coding_labor_normalization,
         human_only=True
     ))
     if not (np.isfinite(baseline) and baseline > 0):

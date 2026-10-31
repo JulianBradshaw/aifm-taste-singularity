@@ -5,6 +5,7 @@ Parameters Module
 Contains the Parameters dataclass for model configuration with validation.
 """
 
+from .lamsite import lam as _lam
 import numpy as np
 from dataclasses import dataclass, field
 from typing import Optional, Dict, Union
@@ -395,7 +396,7 @@ class Parameters:
                     serial_min, serial_max = serial_limits if isinstance(serial_limits, (list, tuple)) and len(serial_limits) == 2 else (1.0, 1e30)
                     max_serial = float(np.clip(max_serial, serial_min, serial_max))
                     self.max_serial_coding_labor_multiplier = max_serial
-                    penalty = float(self.parallel_penalty)
+                    penalty = float(_lam('cap', self.parallel_penalty))
                     if penalty <= 0:
                         logger.warning("parallel_penalty must be positive to derive optimal_ces_frontier_cap from max_serial_coding_labor_multiplier")
                     else:
@@ -466,7 +467,7 @@ class Parameters:
 def _uplift_parallel_penalty(params) -> float:
     """The parallel->serial exponent, or ValueError when it cannot be used."""
     try:
-        pp = float(params.parallel_penalty)
+        pp = float(_lam('anchor', params.parallel_penalty))
     except (AttributeError, TypeError, ValueError) as e:
         raise ValueError(
             f"parallel_penalty is required to convert between the parallel and "

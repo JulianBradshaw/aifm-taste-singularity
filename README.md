@@ -2,7 +2,8 @@
 
 > [!NOTE]
 > **Taste-only singularity runs.** This copy adds an optional switch that holds
-> β (r_software) fixed after calibration, plus scripts that scale the research
+> β (r_software) fixed after calibration, a switch that gives each use of the
+> parallelization penalty λ its own value, and scripts that scale the research
 > taste slope and run the Monte Carlo grid. See
 > [taste_singularity/README.md](taste_singularity/README.md).
 

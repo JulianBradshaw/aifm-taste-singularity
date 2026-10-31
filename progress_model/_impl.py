@@ -9,6 +9,7 @@ This is the implementation module. For external use, import from the
 progress_model package instead of this module directly.
 """
 
+from .lamsite import lam as _lam
 import os
 import numpy as np
 from dataclasses import dataclass, field
@@ -16,7 +17,6 @@ from typing import List, Tuple, Optional, Dict, Any, Union, NamedTuple
 from scipy import optimize, integrate, interpolate
 from collections import OrderedDict
 import logging
-import os
 import time
 from . import config as cfg
 try:
@@ -260,7 +260,7 @@ class ProgressModel:
 
         # Determine which metric and target we need
         if milestone == 'AI2027-SC':
-            target = (30 ** (1 / self.params.parallel_penalty)) * 30 * cfg.PARALLEL_LABOR_MULT_BETWEEN_AVERAGE_AND_TOP_FOR_AI2027_SC
+            target = (30 ** (1 / _lam('metrics', self.params.parallel_penalty))) * 30 * cfg.PARALLEL_LABOR_MULT_BETWEEN_AVERAGE_AND_TOP_FOR_AI2027_SC
             metric_name = 'ai_coding_labor_mult_ref_present_day'
         elif milestone.startswith('AIR-'):
             # Extract multiplier from milestone name (e.g., 'AIR-5x' -> 5)
@@ -294,17 +294,17 @@ class ProgressModel:
                 coding_labor_with_present_resources = automation_model.coding_labor_optimal_ces(
                     present_day_human_labor, present_day_inference_compute, lnE, self.params
                 )
-                serial_coding_labor = float((coding_labor ** self.params.parallel_penalty) * self.params.coding_labor_normalization)
-                serial_coding_labor_with_present_resources = float((coding_labor_with_present_resources ** self.params.parallel_penalty) * self.params.coding_labor_normalization)
+                serial_coding_labor = float((coding_labor ** _lam('metrics', self.params.parallel_penalty)) * self.params.coding_labor_normalization)
+                serial_coding_labor_with_present_resources = float((coding_labor_with_present_resources ** _lam('metrics', self.params.parallel_penalty)) * self.params.coding_labor_normalization)
             else:
                 automation_fraction = compute_automation_fraction(progress, self.params)
                 serial_coding_labor = compute_coding_labor_deprecated(
                     automation_fraction, inference_H100e, L_HUMAN,
-                    self.params.rho_coding_labor, self.params.parallel_penalty, self.params.coding_labor_normalization
+                    self.params.rho_coding_labor, _lam('metrics', self.params.parallel_penalty), self.params.coding_labor_normalization
                 )
                 serial_coding_labor_with_present_resources = compute_coding_labor_deprecated(
                     automation_fraction, present_day_inference_compute, present_day_human_labor,
-                    self.params.rho_coding_labor, self.params.parallel_penalty, self.params.coding_labor_normalization
+                    self.params.rho_coding_labor, _lam('metrics', self.params.parallel_penalty), self.params.coding_labor_normalization
                 )
                 coding_labor_with_present_resources = serial_coding_labor_with_present_resources
 
@@ -1190,7 +1190,7 @@ class ProgressModel:
                 (cfg.REFERENCE_COMPUTE_CHANGE, self.params.compute_anchor_exp_cap),
                 (cfg.REFERENCE_LABOR_CHANGE, self.params.labor_anchor_exp_cap),
                 ref_exp_compute, ref_coding_labor,
-                self.params.parallel_penalty,
+                _lam('expcap', self.params.parallel_penalty),
                 self.params.coding_labor_normalization,
             )
             self.params.rho_experiment_capacity = rho
@@ -1719,7 +1719,7 @@ class ProgressModel:
         # using exponential (log-space) interpolation between adjacent samples.
         ai2027_sc_time = None
         try:
-            ai2027_sc_required_mult = (30 ** (1 / self.params.parallel_penalty)) * 30 * cfg.PARALLEL_LABOR_MULT_BETWEEN_AVERAGE_AND_TOP_FOR_AI2027_SC
+            ai2027_sc_required_mult = (30 ** (1 / _lam('metrics', self.params.parallel_penalty))) * 30 * cfg.PARALLEL_LABOR_MULT_BETWEEN_AVERAGE_AND_TOP_FOR_AI2027_SC
             ai2027_sc_time = _find_exponential_crossing_time(
                 np.asarray(times, dtype=float),
                 np.asarray(ai_coding_labor_mult_ref_present_day, dtype=float),
@@ -2132,7 +2132,7 @@ class ProgressModel:
                 'interpolation_type': 'linear',            },
             'AI2027-SC': {
                 'metric': 'ai_coding_labor_mult_ref_present_day',
-                'target': (30 ** (1 / self.params.parallel_penalty)) * 30 * cfg.PARALLEL_LABOR_MULT_BETWEEN_AVERAGE_AND_TOP_FOR_AI2027_SC,
+                'target': (30 ** (1 / _lam('metrics', self.params.parallel_penalty))) * 30 * cfg.PARALLEL_LABOR_MULT_BETWEEN_AVERAGE_AND_TOP_FOR_AI2027_SC,
                 'interpolation_type': 'exponential',
             },
             'AIR-5x': {

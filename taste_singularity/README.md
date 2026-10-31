@@ -11,7 +11,7 @@ model's default. A sample has a TOS when m > β, where
 All runs use the Eli 08-16-26 preset (or the Eli Q2 sampling config for the
 Monte Carlo) with the parallelization penalty λ set to 0.65.
 
-## The two switches
+## The switches
 
 **β-hold.** By default the model refits r_software (and so β) to the 2024
 software-efficiency rate on every run, so raising the coding-labor ceiling
@@ -20,6 +20,25 @@ software-efficiency rate on every run, so raising the coding-labor ceiling
 (`progress_model/_impl.py`). Unset, the model is unchanged. The runs pin it to
 the value calibrated at λ 0.65 with the 15x ceiling (Eli preset: 3.0605, so
 β = 0.327), so that a higher ceiling acts only as a takeoff effect.
+
+**λ sites.** The model uses one parallelization penalty λ
+(`parallel_penalty`) in several places. `progress_model/lamsite.py` lets each
+use take its own λ, set as JSON in the environment variable `LAM_SITES`. Sites
+not named keep `parallel_penalty`; with `LAM_SITES` unset the model is
+unchanged.
+
+- `anchor`: backing today's coding uplift out into an automation level, and
+  the other uplift calibrations.
+- `cap`: converting the Maximum Serial Coding Labor Multiplier to a parallel cap.
+- `expcap`: the experiment-capacity CES calibration.
+- `metrics`: reported metrics and milestone thresholds (e.g. AI2027-SC).
+- `history`, `dynamics`: the λ applied to growth in coding labor before and
+  after the present day, with levels pinned at today's values. These need
+  `LAM_PD`, `LAM_H0` and, for AI labor, `LAM_XREF`, which
+  `lambda_sites.model_run(params, sites)` sets for you.
+
+Example: `lambda_sites.model_run(p, {'dynamics': 0.9})` keeps λ 0.65 for history
+and calibration and uses 0.9 for future swarms.
 
 **Taste-slope scaling.** `ai_research_taste_slope` is entered in SDs per
 progress-year (Eli: 2.1) and the model converts it to m (Eli: 0.241). m is
@@ -51,6 +70,8 @@ Run from this folder with `AIFM_ROOT=..` (the repository root) after
   at its 15x value, then with m held too.
 - `mc2.py N OUT`: the grid λ ∈ {0.65, 0.9} × ceiling ∈ {15x, 50x} ×
   w ∈ {0.3, 0.5, 0.7}, with β and m held per sample at their λ 0.65, 15x values.
+- `lambda_sites.py`: runs a preset with a `sites` dict and sets the `LAM_*`
+  variables.
 - `ana.py`, `ana2.py`: summaries (P(TOS), median AC→ASI, median ASI,
   P(ASI < 2030)).
 

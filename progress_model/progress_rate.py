@@ -7,6 +7,7 @@ including research effort, software progress, automation fraction, and the main
 progress_rate_at_time function that serves as the RHS of the ODE system.
 """
 
+from .lamsite import lam as _lam, serial as _serial
 import numpy as np
 from typing import List
 import logging
@@ -390,7 +391,7 @@ def progress_rate_at_time(t: float, state: List[float], time_series_data: TimeSe
         if params.human_only:
             automation_fraction = 0.0
             aggregate_research_taste = 1.0
-            coding_labor = compute_coding_labor_deprecated(None, inference_H100e, L_HUMAN, params.rho_coding_labor, params.parallel_penalty, params.coding_labor_normalization, human_only=True)
+            coding_labor = _serial(L_HUMAN, t, params.parallel_penalty, params.coding_labor_normalization, True)
         else:
             # Compute automation fraction from cumulative progress
             automation_fraction = compute_automation_fraction(model_progress, params)
@@ -413,16 +414,17 @@ def progress_rate_at_time(t: float, state: List[float], time_series_data: TimeSe
                     automation_model = params.automation_model
                     L_opt = automation_model.coding_labor_optimal_ces(H, C, lnE, params)
                     # Match units with compute_coding_labor_deprecated: apply parallel_penalty and normalization
-                    coding_labor = float((L_opt ** params.parallel_penalty) * params.coding_labor_normalization)
+                    coding_labor = float(_serial(L_opt, t, params.parallel_penalty, params.coding_labor_normalization, False))
                 except Exception as e:
                     if should_reraise(e):
                         raise
                     logger.warning(f"Falling back to simple CES due to optimal_ces error: {e}")
-                    coding_labor = compute_coding_labor_deprecated(automation_fraction, inference_H100e, L_HUMAN, params.rho_coding_labor, params.parallel_penalty, params.coding_labor_normalization)
+                    coding_labor = _serial(compute_coding_labor_deprecated(automation_fraction, inference_H100e, L_HUMAN, params.rho_coding_labor, 1.0, 1.0), t, params.parallel_penalty, params.coding_labor_normalization, False)
             else:
                 coding_labor = compute_coding_labor_deprecated(
-                    automation_fraction, inference_H100e, L_HUMAN, params.rho_coding_labor, params.parallel_penalty, params.coding_labor_normalization
+                    automation_fraction, inference_H100e, L_HUMAN, params.rho_coding_labor, 1.0, 1.0
                 )
+                coding_labor = _serial(coding_labor, t, params.parallel_penalty, params.coding_labor_normalization, False)
 
         if not np.isfinite(coding_labor) or coding_labor < 0:
             logger.warning(f"Invalid cognitive output: {coding_labor}")

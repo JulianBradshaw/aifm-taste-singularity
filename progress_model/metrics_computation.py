@@ -6,6 +6,7 @@ Handles the computation of comprehensive metrics for each time point in the traj
 This module was extracted from _impl.py to improve modularity and enable future vectorization.
 """
 
+from .lamsite import lam as _lam
 import numpy as np
 import time
 import logging
@@ -64,7 +65,7 @@ def compute_mrts_exp_compute_human_labor(
         MRTS in units of "experiment compute per human" (array).
         Positive values indicate how much experiment compute one human provides.
     """
-    pp = parallel_penalty
+    pp = _lam('metrics', parallel_penalty)
 
     # Handle edge cases to avoid division by zero
     if abs(alpha) < 1e-18 or abs(gamma) < 1e-18:
@@ -235,11 +236,11 @@ def compute_metrics_loop(
 
             coding_labor = L_opt
             coding_labor_with_present_resources = L_opt_present_resources
-            serial_coding_labor = (L_opt ** params.parallel_penalty) * params.coding_labor_normalization
-            serial_coding_labor_with_present_resources = (L_opt_present_resources ** params.parallel_penalty) * params.coding_labor_normalization
+            serial_coding_labor = (L_opt ** _lam('metrics', params.parallel_penalty)) * params.coding_labor_normalization
+            serial_coding_labor_with_present_resources = (L_opt_present_resources ** _lam('metrics', params.parallel_penalty)) * params.coding_labor_normalization
 
             if takeoff_start_human_only_stats is not None:
-                serial_coding_labor_takeoff_start = (L_opt_takeoff_start ** params.parallel_penalty) * params.coding_labor_normalization
+                serial_coding_labor_takeoff_start = (L_opt_takeoff_start ** _lam('metrics', params.parallel_penalty)) * params.coding_labor_normalization
 
         except Exception as e:
             if should_reraise(e):
@@ -249,11 +250,11 @@ def compute_metrics_loop(
         # Simple CES mode
         serial_coding_labor = compute_coding_labor_deprecated(
             automation_fraction, inference_H100e, L_HUMAN,
-            params.rho_coding_labor, params.parallel_penalty, params.coding_labor_normalization
+            params.rho_coding_labor, _lam('metrics', params.parallel_penalty), params.coding_labor_normalization
         )
         # For deprecated mode, extract coding_labor (before parallel penalty)
         if params.parallel_penalty != 0:
-            coding_labor = (serial_coding_labor / params.coding_labor_normalization) ** (1.0 / params.parallel_penalty)
+            coding_labor = (serial_coding_labor / params.coding_labor_normalization) ** (1.0 / _lam('metrics', params.parallel_penalty))
         else:
             coding_labor = serial_coding_labor / params.coding_labor_normalization
 
@@ -261,10 +262,10 @@ def compute_metrics_loop(
         serial_coding_labor_with_present_resources = compute_coding_labor_deprecated(
             automation_fraction, np.full_like(inference_H100e, present_day_inference_compute),
             np.full_like(L_HUMAN, present_day_human_labor),
-            params.rho_coding_labor, params.parallel_penalty, params.coding_labor_normalization
+            params.rho_coding_labor, _lam('metrics', params.parallel_penalty), params.coding_labor_normalization
         )
         if params.parallel_penalty != 0:
-            coding_labor_with_present_resources = (serial_coding_labor_with_present_resources / params.coding_labor_normalization) ** (1.0 / params.parallel_penalty)
+            coding_labor_with_present_resources = (serial_coding_labor_with_present_resources / params.coding_labor_normalization) ** (1.0 / _lam('metrics', params.parallel_penalty))
         else:
             coding_labor_with_present_resources = serial_coding_labor_with_present_resources / params.coding_labor_normalization
 
@@ -273,7 +274,7 @@ def compute_metrics_loop(
                 automation_fraction,
                 np.full_like(inference_H100e, takeoff_start_human_only_stats['inference_H100e']),
                 np.full_like(L_HUMAN, takeoff_start_human_only_stats['human_labor']),
-                params.rho_coding_labor, params.parallel_penalty, params.coding_labor_normalization
+                params.rho_coding_labor, _lam('metrics', params.parallel_penalty), params.coding_labor_normalization
             )
 
     # Ensure finite values
@@ -431,7 +432,7 @@ def compute_metrics_loop(
 
     # ========== STEP 11: Compute human-only metrics ==========
     _t0 = time.perf_counter()
-    human_only_serial_coding_labor = L_HUMAN ** params.parallel_penalty
+    human_only_serial_coding_labor = L_HUMAN ** _lam('metrics', params.parallel_penalty)
     human_only_aggregate_research_taste = compute_aggregate_research_taste(
         np.zeros(n_points),  # No AI research taste
         params.taste_distribution
@@ -458,7 +459,7 @@ def compute_metrics_loop(
         params.alpha_experiment_capacity,
         params.rho_experiment_capacity,
         params.experiment_compute_exponent,
-        params.parallel_penalty,
+        _lam('metrics', params.parallel_penalty),
     )
     _dt_human_only = time.perf_counter() - _t0
 
@@ -477,7 +478,7 @@ def compute_metrics_loop(
     human_labor_contribution = L_HUMAN
     ai_labor_contribution = np.maximum(0.0, coding_labor - human_labor_contribution)
 
-    if params.parallel_penalty and params.parallel_penalty != 0:
+    if _lam('metrics', params.parallel_penalty) and _lam('metrics', params.parallel_penalty) != 0:
         ai_coding_labor_multiplier = np.where(
             ai_labor_contribution > 0,
             coding_labor / human_labor_contribution,
@@ -508,7 +509,7 @@ def compute_metrics_loop(
     with np.errstate(invalid='ignore'):
         _serial_uplift_ref_present_day = np.power(
             np.maximum(ai_coding_labor_mult_ref_present_day, 0.0),
-            params.parallel_penalty,
+            _lam('metrics', params.parallel_penalty),
         )
     excess_serial_coding_labor_uplift_ref_present_day = np.where(
         np.isfinite(_serial_uplift_ref_present_day),

@@ -6,6 +6,7 @@ This module contains functions for integrating the progress model differential
 equations, including initial condition computation and the main ODE solver.
 """
 
+from .lamsite import lam as _lam, serial as _serial
 import numpy as np
 from scipy import integrate
 import time
@@ -220,16 +221,16 @@ def compute_initial_conditions(time_series_data: TimeSeriesData, params: Paramet
         initial_automation = 1.0
         initial_ai_research_taste = 0.0
         initial_aggregate_research_taste = 1.0
-        coding_labor = compute_coding_labor_deprecated(None, inference_H100e, L_HUMAN, params.rho_coding_labor, params.parallel_penalty, params.coding_labor_normalization, human_only=True)
+        coding_labor = _serial(L_HUMAN, start_time, params.parallel_penalty, params.coding_labor_normalization, True)
         research_effort = compute_research_effort(experiment_H100e, coding_labor, params.alpha_experiment_capacity, params.rho_experiment_capacity, params.experiment_compute_exponent, initial_aggregate_research_taste)
     else:
         initial_automation = compute_automation_fraction(initial_progress, params)
         initial_ai_research_taste = compute_ai_research_taste(initial_progress, params)
         initial_aggregate_research_taste = compute_aggregate_research_taste(initial_ai_research_taste, params.taste_distribution)
-        coding_labor = compute_coding_labor_deprecated(
+        coding_labor = _serial(compute_coding_labor_deprecated(
             initial_automation, inference_H100e, L_HUMAN,
-            params.rho_coding_labor, params.parallel_penalty, params.coding_labor_normalization
-        )
+            params.rho_coding_labor, 1.0, 1.0
+        ), start_time, params.parallel_penalty, params.coding_labor_normalization, False)
 
         research_effort = compute_research_effort(
             experiment_H100e, coding_labor,
@@ -344,7 +345,7 @@ def integrate_progress_human_only(
         experiment_compute_fine = np.interp(internal_times, data.time, data.experiment_H100e)
 
     # ========== STEP 2: Compute coding labor (vectorized) ==========
-    serial_coding_labor_fine = np.power(L_HUMAN_fine, params.parallel_penalty) * params.coding_labor_normalization
+    serial_coding_labor_fine = _serial(L_HUMAN_fine, internal_times, params.parallel_penalty, params.coding_labor_normalization, True)
     if serial_labor_multiplier_fn is not None:
         serial_coding_labor_fine = serial_coding_labor_fine * np.asarray(
             serial_labor_multiplier_fn(internal_times), dtype=float)
