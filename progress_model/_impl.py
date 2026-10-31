@@ -9,12 +9,14 @@ This is the implementation module. For external use, import from the
 progress_model package instead of this module directly.
 """
 
+import os
 import numpy as np
 from dataclasses import dataclass, field
 from typing import List, Tuple, Optional, Dict, Any, Union, NamedTuple
 from scipy import optimize, integrate, interpolate
 from collections import OrderedDict
 import logging
+import os
 import time
 from . import config as cfg
 try:
@@ -1246,6 +1248,8 @@ class ProgressModel:
                 "uplift reconstruction: no usable uplift statistics; calibrating "
                 "r_software against the human-only reference rate")
         self.params.r_software = self.params.software_progress_rate_at_reference_year * self.params.r_software/_calibration_ref_rate
+        if os.environ.get('AIFM_FIX_R'):
+            self.params.r_software = float(os.environ['AIFM_FIX_R'])
         logger.info(f"new r_software: {self.params.r_software}")
         _timing_wall['human_only_rescale_r_software'] = time.perf_counter() - _t0
         _timing_cpu['human_only_rescale_r_software'] = time.process_time() - _c0

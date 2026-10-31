@@ -1,5 +1,11 @@
 # AI Futures Model (with bug fixes)
 
+> [!NOTE]
+> **Taste-only singularity runs.** This copy adds an optional switch that holds
+> β (r_software) fixed after calibration, plus scripts that scale the research
+> taste slope and run the Monte Carlo grid. See
+> [taste_singularity/README.md](taste_singularity/README.md).
+
 > [!WARNING]
 > **Unverified fixes.** This repository is a copy of
 > [AI-Futures-Project/aifm-public](https://github.com/AI-Futures-Project/aifm-public)
