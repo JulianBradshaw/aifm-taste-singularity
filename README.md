@@ -1,4 +1,16 @@
-# AI Futures Model (with bug fixes)
+# AI Futures Model (OUTDATED)
+
+> [!IMPORTANT]
+> I've created a revised version of this repo called
+> ["aifm-taste-singularity-revamped"](https://github.com/JulianBradshaw/aifm-taste-singularity-revamped)
+> which handles λ differently and which contains an [updated V2 version
+> of my corresponding 2-page writeup on p(taste-only-singularity)](https://github.com/JulianBradshaw/aifm-taste-singularity-revamped/blob/main/docs/Likelihood-of-Taste-Only-Singularity-V2.pdf).
+> It also contains an [Errata document](https://github.com/JulianBradshaw/aifm-taste-singularity-revamped/blob/main/docs/Errata-with-appendix.pdf) explaining errors and omissions in the V1 writeup,
+> and includes an appendix which explains how to recreate the numbers used in the V1 writeup.
+>
+> The only change I've made to this repo since the V1 writeup is this readme-only edit.
+
+---
 
 > [!NOTE]
 > **Taste-only singularity runs.** This copy adds an optional switch that holds
