@@ -8,7 +8,15 @@
 > It also contains an [Errata document](https://github.com/JulianBradshaw/aifm-taste-singularity-revamped/blob/main/docs/Errata-with-appendix.pdf) explaining errors and omissions in the V1 writeup,
 > and includes an appendix which explains how to recreate the numbers used in the V1 writeup.
 >
-> The only change I've made to this repo since the V1 writeup is this readme-only edit.
+> The only change I've made to this repo since the V1 writeup is this readme-only edit. EDIT2: and this followup readme-only edit below!
+>
+> EDIT2: Realized earlier today that the AIFP's 8/16/26 Q2.5 2026 Update blog post's [mention of "Research taste parameter adjustments"](https://www.lesswrong.com/posts/ZPSsmRH5oMwLPXys4/q2-5-2026-timelines-update-uplift-and-revenue#Research_taste_parameter_adjustments) based on upcoming research was almost certainly referring to TasteVal which was eventually published on 10/6/2026 and which I used in my writeup.
+>
+> In other words, Eli already updated his "Automated Research Taste Slope" *and* his "Median to Top Taste Multiplier" based on TasteVal. Now luckily I actually computed my adjustments to Eli's Taste Slope using his older numbers… except that when I ran my Monte Carlo simulation, *that* was using his current numbers, which are in the AIFM public code, so my p(taste-only) at w = 0.4/0.6/0.8 are arguably too high, since they double-update on TasteVal. So corrections to V2 version:
+> 
+> p(taste-only) drops to "w = 0.4, 0.6, 0.8 ➡ p(taste-only) = 63%, 54%, 45%" on a rescaled draw. Still need to run a fresh Monte Carlo. However, numbers listed in V2 for m_dir, m_exp, β, m are all reasonably reflecting Eli's numbers without his update on TasteVal. My statement "default p(taste-only) here is 40%" is true of Eli's updated numbers, but the value for his earlier 2026 position on the V2 repo's code would be 35%.
+>
+> I suppose I'll make a V3 doc later, but it would just contain those corrections I expect. Need to do some more doublechecking and run that Monte Carlo…
 
 ---
 
