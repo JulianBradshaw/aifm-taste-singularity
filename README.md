@@ -16,7 +16,7 @@
 > 
 > p(taste-only) drops to "w = 0.4, 0.6, 0.8 ➡ p(taste-only) = 63%, 54%, 45%" on a rescaled draw. Still need to run a fresh Monte Carlo. However, numbers listed in V2 for m_dir, m_exp, β, m are all reasonably reflecting Eli's numbers without his update on TasteVal. My statement "default p(taste-only) here is 40%" is true of Eli's updated numbers, but the value for his earlier 2026 position on the V2 repo's code would be 35%.
 >
-> I suppose I'll make a V3 doc later, but it would just contain those corrections I expect. Need to do some more doublechecking and run that Monte Carlo…
+> I suppose I'll make a V3 doc later, but it would just contain those corrections I expect. Need to do some more doublechecking and run that Monte Carlo… (EDIT: focused on some compute verification experiments and analysis of METR's Anthropic AECI/etc. scores first)
 
 ---
 
